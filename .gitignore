@@ -1,0 +1,14 @@
+.build/
+*.xcodeproj
+.DS_Store
+
+# build output
+dist/
+
+# secrets / local state — NEVER commit
+credentials.json
+*credentials*.json
+usage-cache.json
+*.token
+.config/
+.env
