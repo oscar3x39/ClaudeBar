@@ -28,7 +28,7 @@ struct AppConfig {
             authorizeURL: url("CLAUDEBAR_AUTHORIZE_URL", "https://claude.ai/oauth/authorize"),
             tokenURL: url("CLAUDEBAR_TOKEN_URL", "https://platform.claude.com/v1/oauth/token"),
             usageURL: url("CLAUDEBAR_USAGE_URL", "https://api.anthropic.com/api/oauth/usage"),
-            userinfoURL: url("CLAUDEBAR_USERINFO_URL", "https://api.anthropic.com/api/oauth/userinfo"),
+            userinfoURL: url("CLAUDEBAR_USERINFO_URL", "https://api.anthropic.com/api/oauth/profile"),
             oauthBetaHeader: str("CLAUDEBAR_OAUTH_BETA", "oauth-2025-04-20"),
             pollInterval: num("CLAUDEBAR_POLL_SECONDS", 300)
         )

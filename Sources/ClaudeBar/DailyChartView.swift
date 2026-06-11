@@ -1,7 +1,7 @@
 import SwiftUI
 import Charts
 
-/// 每日用量長條圖。資料來自本機 JSONL（非官方 API）。
+/// 每日用量長條圖，依 model 家族堆疊。資料來自本機 JSONL（非官方 API）。
 /// 可切換刻度：$ 絕對成本 / % 相對當期最高日（最高=100%）。
 struct DailyChartView: View {
     let days: [DayCost]
@@ -9,11 +9,26 @@ struct DailyChartView: View {
 
     private let ink = Color(white: 0.13)
     private let sub = Color(white: 0.40)
-    private let green = Color(red: 0.20, green: 0.78, blue: 0.35)
+
+    /// 固定家族順序，只列出實際出現的。
+    private var families: [String] {
+        let order = ["Opus", "Sonnet", "Haiku", "Other"]
+        let present = Set(days.flatMap { $0.byModel.keys })
+        return order.filter { present.contains($0) }
+    }
+    private func color(_ family: String) -> Color {
+        switch family {
+        case "Opus": return Color(red: 0.55, green: 0.36, blue: 0.86)   // 紫
+        case "Sonnet": return Color(red: 0.20, green: 0.78, blue: 0.35) // 綠
+        case "Haiku": return Color(red: 0.95, green: 0.62, blue: 0.20)  // 橘
+        default: return Color(white: 0.55)                              // 灰
+        }
+    }
 
     private var maxCost: Double { days.map(\.cost).max() ?? 0 }
-    private func yValue(_ d: DayCost) -> Double {
-        percent ? (maxCost > 0 ? d.cost / maxCost * 100 : 0) : d.cost
+    private func yValue(_ d: DayCost, _ family: String) -> Double {
+        let c = d.byModel[family] ?? 0
+        return percent ? (maxCost > 0 ? c / maxCost * 100 : 0) : c
     }
     private var todayText: String {
         guard let t = days.last else { return "" }
@@ -30,11 +45,17 @@ struct DailyChartView: View {
                 Spacer()
                 Text(todayText).font(.system(size: 11)).foregroundColor(sub)
             }
-            Chart(days) { d in
-                BarMark(x: .value("日期", d.label), y: .value("用量", yValue(d)))
-                    .foregroundStyle(d.id == days.last?.id ? green : green.opacity(0.45))
-                    .cornerRadius(3)
+            Chart {
+                ForEach(days) { d in
+                    ForEach(families, id: \.self) { fam in
+                        BarMark(x: .value("日期", d.label), y: .value("用量", yValue(d, fam)))
+                            .foregroundStyle(by: .value("Model", fam))
+                            .cornerRadius(2)
+                    }
+                }
             }
+            .chartForegroundStyleScale(domain: families, range: families.map(color))
+            .chartLegend(position: .bottom, spacing: 6)
             .chartYAxis {
                 AxisMarks(position: .leading) { value in
                     AxisGridLine().foregroundStyle(Color.black.opacity(0.06))

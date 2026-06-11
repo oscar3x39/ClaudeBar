@@ -18,6 +18,7 @@ echo "==> 組裝 ${OUT}"
 rm -rf "$OUT"
 mkdir -p "${OUT}/Contents/MacOS" "${OUT}/Contents/Resources"
 cp "$BIN" "${OUT}/Contents/MacOS/${APP_NAME}"
+cp assets/claude-logo.png "${OUT}/Contents/Resources/claude-logo.png"
 
 cat > "${OUT}/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>

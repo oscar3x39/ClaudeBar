@@ -68,7 +68,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if popover.isShown {
             popover.performClose(nil)
         } else {
-            if svc.isAuthed { Task { await svc.refreshUsage() } }
+            // 不在點開時刷新；資料由背景每 pollInterval（預設 5 分鐘）更新，
+            // 需要最新值可按 popover 內的 Refresh 鈕。
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
             NSApp.activate(ignoringOtherApps: true)
         }

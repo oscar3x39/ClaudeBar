@@ -8,6 +8,8 @@ final class UsageService: ObservableObject {
     @Published private(set) var awaitingCode = false
     @Published private(set) var usage: UsageResponse?
     @Published private(set) var email: String?
+    @Published private(set) var fullName: String?
+    @Published private(set) var plan: String?
     @Published private(set) var updatedAt: Date?
     @Published private(set) var errorText: String?
     @Published private(set) var daily: [DayCost] = []
@@ -23,6 +25,9 @@ final class UsageService: ObservableObject {
     private let client: OAuthClient
     private let openURL: (URL) -> Void
     private var pending: PendingAuth?
+
+    /// 下次背景刷新的預估時間（上次成功抓取 + 輪詢間隔）。
+    var nextUpdate: Date? { updatedAt.map { $0.addingTimeInterval(config.pollInterval) } }
 
     /// 任何狀態變動後通知外層（給 AppDelegate 更新 menu bar 標題）。
     var onChange: (() -> Void)?
@@ -85,7 +90,7 @@ final class UsageService: ObservableObject {
 
     func signOut() {
         store.clear()
-        isAuthed = false; usage = nil; email = nil; updatedAt = nil; errorText = nil
+        isAuthed = false; usage = nil; email = nil; fullName = nil; plan = nil; updatedAt = nil; errorText = nil
         onChange?()
     }
 
@@ -126,13 +131,31 @@ final class UsageService: ObservableObject {
         }
     }
 
+    /// 從 /api/oauth/profile 取得帳號 email、姓名、方案等級。
     func refreshEmail() async {
         guard isAuthed,
               let (data, http) = try? await client.authorizedGET(config.userinfoURL),
               http.statusCode == 200,
               let j = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return }
-        if let e = j["email"] as? String { email = e }
-        else if let acc = j["account"] as? [String: Any], let e = acc["email_address"] as? String { email = e }
+        let acc = j["account"] as? [String: Any]
+        email = (acc?["email"] as? String) ?? (acc?["email_address"] as? String) ?? (j["email"] as? String)
+        fullName = (acc?["full_name"] as? String) ?? (acc?["display_name"] as? String)
+        plan = Self.planLabel(account: acc, organization: j["organization"] as? [String: Any])
         onChange?()
+    }
+
+    /// 把 profile 的方案資訊翻成顯示用標籤，如 "Max 5x" / "Max 20x" / "Pro"。
+    private static func planLabel(account: [String: Any]?, organization: [String: Any]?) -> String? {
+        let tier = (organization?["rate_limit_tier"] as? String)?.lowercased() ?? ""
+        if account?["has_claude_max"] as? Bool == true {
+            if tier.contains("20x") { return "Max 20x" }
+            if tier.contains("5x") { return "Max 5x" }
+            return "Max"
+        }
+        if account?["has_claude_pro"] as? Bool == true { return "Pro" }
+        let orgType = (organization?["organization_type"] as? String)?.lowercased() ?? ""
+        if orgType.contains("max") { return "Max" }
+        if orgType.contains("pro") { return "Pro" }
+        return nil
     }
 }

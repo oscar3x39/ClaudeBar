@@ -46,8 +46,22 @@ struct PopoverView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
-            if let email = svc.email {
-                Text(email).font(.system(size: 11)).foregroundColor(Style.sub)
+            if svc.isAuthed {
+                HStack(spacing: 6) {
+                    Image(systemName: "person.crop.circle")
+                        .font(.system(size: 13)).foregroundColor(Style.sub)
+                    Text(svc.fullName ?? svc.email ?? "Signed in")
+                        .font(.system(size: 12, weight: .medium)).foregroundColor(Style.ink)
+                        .lineLimit(1).truncationMode(.middle)
+                    Spacer(minLength: 6)
+                    if let plan = svc.plan {
+                        Text(plan.uppercased())
+                            .font(.system(size: 10, weight: .bold)).foregroundColor(Style.ink)
+                            .padding(.horizontal, 7).padding(.vertical, 2)
+                            .background(Capsule().fill(Color.black.opacity(0.08)))
+                            .overlay(Capsule().stroke(Style.border, lineWidth: 1))
+                    }
+                }
             }
             if svc.isAuthed {
                 UsageSection(svc: svc)
@@ -66,8 +80,10 @@ struct PopoverView: View {
 
     private var footer: some View {
         HStack(spacing: 8) {
-            if let u = svc.updatedAt {
-                Text("Updated \(timeAgo(u))").font(.system(size: 10)).foregroundColor(Style.sub)
+            if let next = svc.nextUpdate {
+                TimelineView(.periodic(from: Date(), by: 1)) { _ in
+                    Text(countdown(next)).font(.system(size: 10)).foregroundColor(Style.sub)
+                }
             }
             Spacer()
             if svc.isAuthed {
@@ -100,9 +116,10 @@ struct PopoverView: View {
         .help(help)
     }
 
-    private func timeAgo(_ d: Date) -> String {
-        let s = Int(-d.timeIntervalSinceNow)
-        return s < 60 ? "\(s)s ago" : "\(s / 60)m ago"
+    private func countdown(_ d: Date) -> String {
+        let s = Int(d.timeIntervalSinceNow.rounded())
+        if s <= 0 { return "Updating…" }
+        return String(format: "Next update in %d:%02d", s / 60, s % 60)
     }
 }
 
