@@ -7,7 +7,7 @@ cd "$(dirname "$0")/.."
 
 APP_NAME="ClaudeBar"
 BUNDLE_ID="com.claudebar.app"
-VERSION="0.1.0"
+VERSION="0.2.0"
 OUT="dist/${APP_NAME}.app"
 
 echo "==> swift build -c release"
