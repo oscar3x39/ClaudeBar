@@ -42,5 +42,11 @@ PLIST
 echo "==> ad-hoc 簽章"
 codesign --force --deep --sign - "$OUT"
 
+echo "==> 壓成 zip（給 GitHub Release 當自我更新檔）"
+ZIP="dist/${APP_NAME}-${VERSION}.zip"
+rm -f "$ZIP"
+ditto -c -k --keepParent "$OUT" "$ZIP"
+
 echo "==> 完成：${OUT}"
+echo "Release 檔：${ZIP}（上傳到 GitHub Release，tag 用 v${VERSION}）"
 echo "拖進 /Applications，或： open ${OUT}"

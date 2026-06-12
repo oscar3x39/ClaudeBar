@@ -94,6 +94,12 @@ final class UsageService: ObservableObject {
         onChange?()
     }
 
+    /// 切換帳號：登出後立刻重啟授權流程。
+    func switchAccount() {
+        signOut()
+        startSignIn()
+    }
+
     // MARK: 抓資料
 
     private var lastFetch: Date?

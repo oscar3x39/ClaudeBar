@@ -4,15 +4,17 @@ import Foundation
 struct ModelPrice { let input, output, cacheWrite, cacheRead: Double }
 
 enum Pricing {
-    static let table: [String: ModelPrice] = [
-        "claude-opus-4-8": .init(input: 5, output: 25, cacheWrite: 6.25, cacheRead: 0.5),
-        "claude-haiku-4-5": .init(input: 1, output: 5, cacheWrite: 1.25, cacheRead: 0.1),
-        "claude-haiku-4-5-20251001": .init(input: 1, output: 5, cacheWrite: 1.25, cacheRead: 0.1),
+    /// 依 model 家族定價（per MTok）。用家族而非完整 id 比對，
+    /// 才不會因版本後綴（如 `[1m]`、日期、新版號）對不上而把成本算成 0。
+    static let byFamily: [String: ModelPrice] = [
+        "Opus":   .init(input: 5, output: 25, cacheWrite: 6.25, cacheRead: 0.5),
+        "Sonnet": .init(input: 3, output: 15, cacheWrite: 3.75, cacheRead: 0.3),
+        "Haiku":  .init(input: 1, output: 5,  cacheWrite: 1.25, cacheRead: 0.1),
     ]
 
-    /// 單則訊息成本（美金）。未知 model 回 0。
+    /// 單則訊息成本（美金）。未知家族（Other）回 0。
     static func cost(model: String, input: Int, output: Int, cacheWrite: Int, cacheRead: Int) -> Double {
-        guard let p = table[model] else { return 0 }
+        guard let p = byFamily[UsageHistory.modelFamily(model)] else { return 0 }
         return (Double(input) * p.input + Double(output) * p.output
             + Double(cacheWrite) * p.cacheWrite + Double(cacheRead) * p.cacheRead) / 1_000_000
     }

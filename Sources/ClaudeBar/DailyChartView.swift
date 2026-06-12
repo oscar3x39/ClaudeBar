@@ -10,11 +10,11 @@ struct DailyChartView: View {
     private let ink = Color(white: 0.13)
     private let sub = Color(white: 0.40)
 
-    /// 固定家族順序，只列出實際出現的。
+    /// 核心三家族固定列出（即使當期沒用到也保留圖例），Other 才依實際出現與否。
     private var families: [String] {
-        let order = ["Opus", "Sonnet", "Haiku", "Other"]
+        let core = ["Opus", "Sonnet", "Haiku"]
         let present = Set(days.flatMap { $0.byModel.keys })
-        return order.filter { present.contains($0) }
+        return present.contains("Other") ? core + ["Other"] : core
     }
     private func color(_ family: String) -> Color {
         switch family {
