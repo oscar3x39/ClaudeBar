@@ -25,6 +25,10 @@ struct DailyChartView: View {
         }
     }
 
+    private var weekdayByLabel: [String: String] {
+        Dictionary(days.map { ($0.label, $0.weekday) }, uniquingKeysWith: { a, _ in a })
+    }
+
     private var maxCost: Double { days.map(\.cost).max() ?? 0 }
     private func yValue(_ d: DayCost, _ family: String) -> Double {
         let c = d.byModel[family] ?? 0
@@ -71,7 +75,10 @@ struct DailyChartView: View {
                 AxisMarks { value in
                     AxisValueLabel {
                         if let s = value.as(String.self) {
-                            Text(s).font(.system(size: 9)).foregroundColor(sub)
+                            VStack(spacing: 1) {
+                                Text(s).font(.system(size: 9)).foregroundColor(sub)
+                                Text(weekdayByLabel[s] ?? "").font(.system(size: 9)).foregroundColor(sub)
+                            }
                         }
                     }
                 }

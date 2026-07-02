@@ -7,6 +7,9 @@ private enum Style {
     static let bg = Color(red: 0.871, green: 0.933, blue: 0.714)
     static let track = Color.black.opacity(0.08)
     static let green = Color(red: 0.20, green: 0.78, blue: 0.35)
+    static let blue = Color(red: 0.20, green: 0.55, blue: 0.90)
+    static let orange = Color(red: 0.95, green: 0.55, blue: 0.15)
+    static let purple = Color(red: 0.60, green: 0.35, blue: 0.85)
     static let ink = Color(white: 0.13)
     static let sub = Color(white: 0.40)
     static let border = Color.black.opacity(0.18)
@@ -42,6 +45,7 @@ private struct CapsuleBar: View {
 struct PopoverView: View {
     @ObservedObject var svc: UsageService
     @ObservedObject var updater: Updater
+    @ObservedObject var appearance = AppearanceStore.shared
     let onQuit: () -> Void
     @State private var code = ""
     @State private var showingSettings = false
@@ -49,7 +53,7 @@ struct PopoverView: View {
     var body: some View {
         Group {
             if showingSettings {
-                SettingsPanel(svc: svc, updater: updater, onQuit: onQuit,
+                SettingsPanel(svc: svc, updater: updater, appearance: appearance, onQuit: onQuit,
                               onBack: { showingSettings = false })
                     .transition(.move(edge: .trailing).combined(with: .opacity))
             } else {
@@ -83,12 +87,10 @@ struct PopoverView: View {
 
     /// 頂部 bar：左為帳號 / 標題，右上角放齒輪設定（慣例位置）。
     private var topBar: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: 9) {
             if svc.isAuthed {
-                Image(systemName: "person.crop.circle")
-                    .font(.system(size: 13)).foregroundColor(Style.sub)
-                Text(svc.fullName ?? svc.email ?? "Signed in")
-                    .font(.system(size: 12, weight: .medium)).foregroundColor(Style.ink)
+                Text(appearance.displayName(fallback: svc.fullName ?? svc.email))
+                    .font(.system(size: 13, weight: .semibold)).foregroundColor(Style.ink)
                     .lineLimit(1).truncationMode(.middle)
                 if let plan = svc.plan {
                     Text(plan.uppercased())
@@ -181,6 +183,7 @@ struct PopoverView: View {
 private struct SettingsPanel: View {
     @ObservedObject var svc: UsageService
     @ObservedObject var updater: Updater
+    @ObservedObject var appearance: AppearanceStore
     let onQuit: () -> Void
     let onBack: () -> Void
 
@@ -211,6 +214,22 @@ private struct SettingsPanel: View {
                     actionRow("Sign Out", icon: "rectangle.portrait.and.arrow.right", tint: .red) {
                         svc.signOut()
                     }
+                }
+
+                section("PROFILE") {
+                    HStack(spacing: 10) {
+                        icon("person")
+                        TextField(svc.fullName ?? svc.email ?? "Display name",
+                                  text: $appearance.customName)
+                            .textFieldStyle(.plain)
+                            .font(.system(size: 12.5)).foregroundColor(Style.ink)
+                        if !appearance.customName.isEmpty {
+                            Button { appearance.customName = "" } label: {
+                                Image(systemName: "xmark.circle.fill")
+                                    .font(.system(size: 12)).foregroundColor(Style.sub.opacity(0.7))
+                            }.buttonStyle(.plain).help("Reset name")
+                        }
+                    }.rowPadding()
                 }
             }
 
@@ -260,10 +279,8 @@ private struct SettingsPanel: View {
 
     private var accountHeader: some View {
         HStack(spacing: 10) {
-            Image(systemName: "person.crop.circle.fill")
-                .font(.system(size: 28)).foregroundColor(Style.sub)
             VStack(alignment: .leading, spacing: 2) {
-                Text(svc.fullName ?? svc.email ?? "Signed in")
+                Text(appearance.displayName(fallback: svc.fullName ?? svc.email))
                     .font(.system(size: 13, weight: .semibold)).foregroundColor(Style.ink)
                     .lineLimit(1).truncationMode(.middle)
                 if let email = svc.email, email != svc.fullName {
@@ -320,9 +337,8 @@ private struct SettingsPanel: View {
 
     private var card: some View {
         RoundedRectangle(cornerRadius: 12, style: .continuous)
-            .fill(Color.white.opacity(0.4))
-            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(Color.black.opacity(0.06), lineWidth: 1))
+            .fill(Color.white.opacity(0.92))
+            .shadow(color: Color.black.opacity(0.07), radius: 4, y: 1)
     }
 
     @ViewBuilder
@@ -392,6 +408,16 @@ private struct UsageSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             WindowRow(title: "5-Hour Window", bucket: svc.usage?.five_hour, tint: Style.green)
+            if let wk = svc.usage?.seven_day {
+                Divider().overlay(Color.black.opacity(0.08))
+                WindowRow(title: "Weekly (All)", bucket: wk, tint: Style.blue)
+            }
+            if let wk = svc.usage?.seven_day_opus {
+                WindowRow(title: "Weekly (Opus)", bucket: wk, tint: Style.purple)
+            }
+            if let wk = svc.usage?.seven_day_sonnet {
+                WindowRow(title: "Weekly (Sonnet)", bucket: wk, tint: Style.orange)
+            }
             if !svc.daily.isEmpty {
                 Divider().overlay(Color.black.opacity(0.08))
                 DailyChartView(days: svc.daily)

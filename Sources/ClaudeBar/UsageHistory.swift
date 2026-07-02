@@ -7,7 +7,14 @@ struct DayCost: Identifiable {
     var cost: Double { byModel.values.reduce(0, +) }
     var id: Date { date }
     var label: String {
-        let f = DateFormatter(); f.dateFormat = "M/d"; return f.string(from: date)
+        let f = DateFormatter(); f.locale = Locale(identifier: "en_US")
+        f.dateFormat = "M/d"; return f.string(from: date)
+    }
+    var weekday: String {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "en_US")
+        f.dateFormat = "EEE" // 短版星期，例：Wed
+        return f.string(from: date)
     }
 }
 
