@@ -26,6 +26,7 @@ enum UsageHistory {
         if m.contains("opus") { return "Opus" }
         if m.contains("sonnet") { return "Sonnet" }
         if m.contains("haiku") { return "Haiku" }
+        if m.contains("fable") { return "Fable" }
         return "Other"
     }
 

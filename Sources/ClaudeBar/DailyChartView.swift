@@ -12,7 +12,7 @@ struct DailyChartView: View {
 
     /// 核心三家族固定列出（即使當期沒用到也保留圖例），Other 才依實際出現與否。
     private var families: [String] {
-        let core = ["Opus", "Sonnet", "Haiku"]
+        let core = ["Opus", "Sonnet", "Haiku", "Fable"]
         let present = Set(days.flatMap { $0.byModel.keys })
         return present.contains("Other") ? core + ["Other"] : core
     }
@@ -21,6 +21,7 @@ struct DailyChartView: View {
         case "Opus": return Color(red: 0.55, green: 0.36, blue: 0.86)   // 紫
         case "Sonnet": return Color(red: 0.20, green: 0.78, blue: 0.35) // 綠
         case "Haiku": return Color(red: 0.95, green: 0.62, blue: 0.20)  // 橘
+        case "Fable": return Color(red: 0.90, green: 0.35, blue: 0.60)  // 粉
         default: return Color(white: 0.55)                              // 灰
         }
     }

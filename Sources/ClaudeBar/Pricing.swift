@@ -10,6 +10,7 @@ enum Pricing {
         "Opus":   .init(input: 5, output: 25, cacheWrite: 6.25, cacheRead: 0.5),
         "Sonnet": .init(input: 3, output: 15, cacheWrite: 3.75, cacheRead: 0.3),
         "Haiku":  .init(input: 1, output: 5,  cacheWrite: 1.25, cacheRead: 0.1),
+        "Fable":  .init(input: 5, output: 25, cacheWrite: 6.25, cacheRead: 0.5),
     ]
 
     /// 單則訊息成本（美金）。未知家族（Other）回 0。
