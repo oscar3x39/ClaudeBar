@@ -422,10 +422,56 @@ private struct UsageSection: View {
                 Divider().overlay(Color.black.opacity(0.08))
                 DailyChartView(days: svc.daily)
             }
+            if let today = svc.daily.last, today.tokens.total > 0 {
+                Divider().overlay(Color.black.opacity(0.08))
+                TokenUsageRow(today: today)
+            }
             if let e = svc.errorText {
                 Text(e).font(.system(size: 10)).foregroundColor(.red)
             }
         }
+    }
+}
+
+/// 今日 token 用量：大數字總量 + In/Out/Cache 細分。
+/// 資料同 Daily Usage，來自本機 JSONL；面板打開時才重算（見 AppDelegate.showPanel）。
+private struct TokenUsageRow: View {
+    let today: DayCost
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .firstTextBaseline) {
+                Text("Token Usage").font(.system(size: 13, weight: .semibold)).foregroundColor(Style.ink)
+                Spacer()
+                Text("Today").font(.system(size: 11)).foregroundColor(Style.sub)
+            }
+            HStack(alignment: .firstTextBaseline, spacing: 5) {
+                Text(Self.fmt(today.tokens.total))
+                    .font(.system(size: 22, weight: .bold)).foregroundColor(Style.ink)
+                Text("tokens").font(.system(size: 11)).foregroundColor(Style.sub)
+            }
+            HStack(spacing: 14) {
+                stat("In", today.tokens.input)
+                stat("Out", today.tokens.output)
+                stat("Cache W", today.tokens.cacheWrite)
+                stat("Cache R", today.tokens.cacheRead)
+            }
+        }
+    }
+
+    private func stat(_ label: String, _ n: Int) -> some View {
+        VStack(alignment: .leading, spacing: 1) {
+            Text(label).font(.system(size: 9, weight: .semibold)).foregroundColor(Style.sub)
+            Text(Self.fmt(n)).font(.system(size: 12, weight: .medium)).foregroundColor(Style.ink)
+        }
+    }
+
+    /// 1_234_567 → "1.2M"、12_300 → "12.3K"。
+    static func fmt(_ n: Int) -> String {
+        let d = Double(n)
+        if d >= 1_000_000 { return String(format: "%.1fM", d / 1_000_000) }
+        if d >= 1_000 { return String(format: "%.1fK", d / 1_000) }
+        return "\(n)"
     }
 }
 

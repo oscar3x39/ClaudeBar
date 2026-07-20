@@ -1,9 +1,19 @@
 import Foundation
 
-/// 某一天的用量（成本），依 model 家族細分。
+/// 某一天的 token 用量，依用途細分（原始 token 數，非成本）。
+struct TokenCounts {
+    var input = 0
+    var output = 0
+    var cacheWrite = 0
+    var cacheRead = 0
+    var total: Int { input + output + cacheWrite + cacheRead }
+}
+
+/// 某一天的用量（成本 + token 數），依 model 家族細分。
 struct DayCost: Identifiable {
     let date: Date
     let byModel: [String: Double] // model 家族（Opus/Sonnet/Haiku/Other）-> 成本
+    var tokens = TokenCounts()    // 當日 token 總量（跨 model）
     var cost: Double { byModel.values.reduce(0, +) }
     var id: Date { date }
     var label: String {
@@ -55,6 +65,7 @@ enum UsageHistory {
         let decoder = JSONDecoder()
         let fm = FileManager.default
         var totals: [Date: [String: Double]] = [:]
+        var tokenTotals: [Date: TokenCounts] = [:]
         var seen = Set<String>()
 
         if let en = fm.enumerator(at: projectsDir, includingPropertiesForKeys: [.contentModificationDateKey]) {
@@ -78,13 +89,18 @@ enum UsageHistory {
                         input: u.input_tokens ?? 0, output: u.output_tokens ?? 0,
                         cacheWrite: u.cache_creation_input_tokens ?? 0, cacheRead: u.cache_read_input_tokens ?? 0)
                     totals[day, default: [:]][fam, default: 0] += c
+                    tokenTotals[day, default: TokenCounts()].input += u.input_tokens ?? 0
+                    tokenTotals[day, default: TokenCounts()].output += u.output_tokens ?? 0
+                    tokenTotals[day, default: TokenCounts()].cacheWrite += u.cache_creation_input_tokens ?? 0
+                    tokenTotals[day, default: TokenCounts()].cacheRead += u.cache_read_input_tokens ?? 0
                 }
             }
         }
 
         return (0..<days).compactMap { off -> DayCost? in
             guard let day = cal.date(byAdding: .day, value: -off, to: today) else { return nil }
-            return DayCost(date: day, byModel: totals[day] ?? [:])
+            return DayCost(date: day, byModel: totals[day] ?? [:],
+                           tokens: tokenTotals[day] ?? TokenCounts())
         }.reversed()
     }
 }

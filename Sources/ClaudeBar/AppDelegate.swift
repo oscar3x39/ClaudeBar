@@ -97,6 +97,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func showPanel() {
         guard let button = statusItem.button, let btnWin = button.window else { return }
 
+        // 打開面板即重算今日 token 用量（本機 JSONL，離線、不打 API）。
+        svc.loadHistory()
+
         // 依內容自適應大小，置於 status item 正下方並貼齊右緣不超出螢幕。
         panel.layoutIfNeeded()
         let size = panel.contentView?.fittingSize ?? NSSize(width: 320, height: 400)
