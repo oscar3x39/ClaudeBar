@@ -41,21 +41,35 @@ struct DailyChartView: View {
             ? String(format: "Today %.0f%%", maxCost > 0 ? t.cost / maxCost * 100 : 0)
             : String(format: "Today $%.0f", t.cost)
     }
+    /// 當日堆疊總量標籤（掛在最頂端 segment 上）。
+    private func totalLabel(_ d: DayCost) -> String {
+        guard d.cost > 0 else { return "" }
+        return percent
+            ? String(format: "%.0f%%", maxCost > 0 ? d.cost / maxCost * 100 : 0)
+            : String(format: "$%.0f", d.cost)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
-                Text("Daily Usage").font(.system(size: 13, weight: .semibold)).foregroundColor(ink)
+                Text("Daily Usage").font(.system(size: 15.6, weight: .semibold)).foregroundColor(ink)
                 toggle
                 Spacer()
-                Text(todayText).font(.system(size: 11)).foregroundColor(sub)
+                Text(todayText).font(.system(size: 13.2)).foregroundColor(sub)
             }
             Chart {
                 ForEach(days) { d in
-                    ForEach(families, id: \.self) { fam in
+                    ForEach(Array(families.enumerated()), id: \.element) { idx, fam in
                         BarMark(x: .value("日期", d.label), y: .value("用量", yValue(d, fam)))
                             .foregroundStyle(by: .value("Model", fam))
                             .cornerRadius(2)
+                            .annotation(position: .top, spacing: 2) {
+                                if idx == families.count - 1 {
+                                    Text(totalLabel(d))
+                                        .font(.system(size: 9.6, weight: .semibold))
+                                        .foregroundColor(sub)
+                                }
+                            }
                     }
                 }
             }
@@ -67,7 +81,7 @@ struct DailyChartView: View {
                     AxisValueLabel {
                         if let v = value.as(Double.self) {
                             Text(percent ? "\(Int(v))%" : "$\(Int(v))")
-                                .font(.system(size: 9)).foregroundColor(sub)
+                                .font(.system(size: 10.8)).foregroundColor(sub)
                         }
                     }
                 }
@@ -77,21 +91,21 @@ struct DailyChartView: View {
                     AxisValueLabel {
                         if let s = value.as(String.self) {
                             VStack(spacing: 1) {
-                                Text(s).font(.system(size: 9)).foregroundColor(sub)
-                                Text(weekdayByLabel[s] ?? "").font(.system(size: 9)).foregroundColor(sub)
+                                Text(s).font(.system(size: 10.8)).foregroundColor(sub)
+                                Text(weekdayByLabel[s] ?? "").font(.system(size: 10.8)).foregroundColor(sub)
                             }
                         }
                     }
                 }
             }
-            .frame(height: 110)
+            .frame(height: 160)
         }
     }
 
     private var toggle: some View {
         Button { percent.toggle() } label: {
             Text(percent ? "%" : "$")
-                .font(.system(size: 11, weight: .bold)).foregroundColor(ink)
+                .font(.system(size: 13.2, weight: .bold)).foregroundColor(ink)
                 .frame(width: 20, height: 18)
                 .background(Capsule().stroke(Color.black.opacity(0.18), lineWidth: 1))
         }.buttonStyle(.plain)

@@ -2,7 +2,7 @@ import SwiftUI
 
 // MARK: - Style (ref: Blimp-Labs/claude-usage-bar demo)
 private enum Style {
-    static let width: CGFloat = 320
+    static let width: CGFloat = 380
     static let pad: CGFloat = 18
     static let bg = Color(red: 0.871, green: 0.933, blue: 0.714)
     static let track = Color.black.opacity(0.08)
@@ -90,23 +90,23 @@ struct PopoverView: View {
         HStack(spacing: 9) {
             if svc.isAuthed {
                 Text(appearance.displayName(fallback: svc.fullName ?? svc.email))
-                    .font(.system(size: 13, weight: .semibold)).foregroundColor(Style.ink)
+                    .font(.system(size: 15.6, weight: .semibold)).foregroundColor(Style.ink)
                     .lineLimit(1).truncationMode(.middle)
                 if let plan = svc.plan {
                     Text(plan.uppercased())
-                        .font(.system(size: 10, weight: .bold)).foregroundColor(Style.ink)
+                        .font(.system(size: 12, weight: .bold)).foregroundColor(Style.ink)
                         .padding(.horizontal, 7).padding(.vertical, 2)
                         .background(Capsule().fill(Color.black.opacity(0.08)))
                         .overlay(Capsule().stroke(Style.border, lineWidth: 1))
                 }
             } else {
                 Text("ClaudeBar")
-                    .font(.system(size: 13, weight: .semibold)).foregroundColor(Style.ink)
+                    .font(.system(size: 15.6, weight: .semibold)).foregroundColor(Style.ink)
             }
             Spacer(minLength: 6)
             Button { showingSettings = true } label: {
                 Image(systemName: "gearshape.fill")
-                    .font(.system(size: 14)).foregroundColor(Style.sub)
+                    .font(.system(size: 16.8)).foregroundColor(Style.sub)
                     .frame(width: 24, height: 24)
                     .contentShape(Rectangle())
             }.buttonStyle(.plain).help("Settings")
@@ -116,12 +116,12 @@ struct PopoverView: View {
     private var footer: some View {
         HStack(spacing: 8) {
             if updater.checking {
-                Text("Checking for updates…").font(.system(size: 10)).foregroundColor(Style.sub)
+                Text("Checking for updates…").font(.system(size: 12)).foregroundColor(Style.sub)
             } else if let note = updater.statusNote {
-                Text(note).font(.system(size: 10)).foregroundColor(Style.sub).lineLimit(1)
+                Text(note).font(.system(size: 12)).foregroundColor(Style.sub).lineLimit(1)
             } else if let next = svc.nextUpdate {
                 TimelineView(.periodic(from: Date(), by: 1)) { _ in
-                    Text(countdown(next)).font(.system(size: 10)).foregroundColor(Style.sub)
+                    Text(countdown(next)).font(.system(size: 12)).foregroundColor(Style.sub)
                 }
             }
             Spacer()
@@ -136,17 +136,17 @@ struct PopoverView: View {
     private func updateBanner(_ tag: String) -> some View {
         HStack(spacing: 8) {
             Image(systemName: "arrow.down.circle.fill")
-                .font(.system(size: 13)).foregroundColor(Style.ink)
+                .font(.system(size: 15.6)).foregroundColor(Style.ink)
             VStack(alignment: .leading, spacing: 1) {
-                Text("New version \(tag)").font(.system(size: 11, weight: .semibold)).foregroundColor(Style.ink)
-                Text("Current v\(Updater.current)").font(.system(size: 9)).foregroundColor(Style.sub)
+                Text("New version \(tag)").font(.system(size: 13.2, weight: .semibold)).foregroundColor(Style.ink)
+                Text("Current v\(Updater.current)").font(.system(size: 10.8)).foregroundColor(Style.sub)
             }
             Spacer()
             if updater.installing {
                 ProgressView().controlSize(.small)
             } else {
                 Button { Task { await updater.installAndRelaunch() } } label: {
-                    Text("Update").font(.system(size: 11, weight: .semibold)).foregroundColor(.white)
+                    Text("Update").font(.system(size: 13.2, weight: .semibold)).foregroundColor(.white)
                         .padding(.horizontal, 12).padding(.vertical, 5)
                         .background(Capsule().fill(Style.ink))
                 }.buttonStyle(.plain)
@@ -156,7 +156,7 @@ struct PopoverView: View {
         .background(RoundedRectangle(cornerRadius: 10).fill(Color.black.opacity(0.06)))
         .overlay(alignment: .bottomLeading) {
             if let e = updater.error {
-                Text(e).font(.system(size: 9)).foregroundColor(.red).padding(.leading, 4).offset(y: 14)
+                Text(e).font(.system(size: 10.8)).foregroundColor(.red).padding(.leading, 4).offset(y: 14)
             }
         }
     }
@@ -164,7 +164,7 @@ struct PopoverView: View {
     private func iconButton(_ systemName: String, help: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: systemName)
-                .font(.system(size: 12, weight: .medium)).foregroundColor(Style.ink)
+                .font(.system(size: 14.4, weight: .medium)).foregroundColor(Style.ink)
                 .frame(width: 28, height: 28)
                 .background(Circle().stroke(Style.border, lineWidth: 1))
         }
@@ -194,12 +194,12 @@ private struct SettingsPanel: View {
             HStack(spacing: 6) {
                 Button(action: onBack) {
                     Image(systemName: "chevron.left")
-                        .font(.system(size: 14, weight: .semibold)).foregroundColor(Style.ink)
+                        .font(.system(size: 16.8, weight: .semibold)).foregroundColor(Style.ink)
                         .frame(width: 26, height: 26)
                         .background(Circle().fill(Color.black.opacity(0.05)))
                         .contentShape(Circle())
                 }.buttonStyle(.plain).help("Back")
-                Text("Settings").font(.system(size: 15, weight: .semibold)).foregroundColor(Style.ink)
+                Text("Settings").font(.system(size: 18, weight: .semibold)).foregroundColor(Style.ink)
                 Spacer()
             }
 
@@ -222,11 +222,11 @@ private struct SettingsPanel: View {
                         TextField(svc.fullName ?? svc.email ?? "Display name",
                                   text: $appearance.customName)
                             .textFieldStyle(.plain)
-                            .font(.system(size: 12.5)).foregroundColor(Style.ink)
+                            .font(.system(size: 15)).foregroundColor(Style.ink)
                         if !appearance.customName.isEmpty {
                             Button { appearance.customName = "" } label: {
                                 Image(systemName: "xmark.circle.fill")
-                                    .font(.system(size: 12)).foregroundColor(Style.sub.opacity(0.7))
+                                    .font(.system(size: 14.4)).foregroundColor(Style.sub.opacity(0.7))
                             }.buttonStyle(.plain).help("Reset name")
                         }
                     }.rowPadding()
@@ -236,7 +236,7 @@ private struct SettingsPanel: View {
             section("GENERAL") {
                 HStack(spacing: 10) {
                     icon("power.circle")
-                    Text("Launch at Login").font(.system(size: 12.5)).foregroundColor(Style.ink)
+                    Text("Launch at Login").font(.system(size: 15)).foregroundColor(Style.ink)
                     Spacer()
                     Toggle("", isOn: Binding(get: { svc.launchAtLogin },
                                              set: { svc.setLaunchAtLogin($0) }))
@@ -247,9 +247,9 @@ private struct SettingsPanel: View {
             section("ABOUT") {
                 HStack(spacing: 10) {
                     icon("info.circle")
-                    Text("ClaudeBar").font(.system(size: 12.5, weight: .medium)).foregroundColor(Style.ink)
+                    Text("ClaudeBar").font(.system(size: 15, weight: .medium)).foregroundColor(Style.ink)
                     Spacer()
-                    Text("v\(Updater.current)").font(.system(size: 11.5)).foregroundColor(Style.sub)
+                    Text("v\(Updater.current)").font(.system(size: 13.8)).foregroundColor(Style.sub)
                 }.rowPadding()
                 rowDivider
                 actionRow("Check for Updates", icon: "arrow.down.circle",
@@ -266,7 +266,7 @@ private struct SettingsPanel: View {
             }
 
             if let e = updater.error {
-                Text(e).font(.system(size: 10)).foregroundColor(.red).lineLimit(2)
+                Text(e).font(.system(size: 12)).foregroundColor(.red).lineLimit(2)
                     .padding(.horizontal, 4)
             }
 
@@ -281,17 +281,17 @@ private struct SettingsPanel: View {
         HStack(spacing: 10) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(appearance.displayName(fallback: svc.fullName ?? svc.email))
-                    .font(.system(size: 13, weight: .semibold)).foregroundColor(Style.ink)
+                    .font(.system(size: 15.6, weight: .semibold)).foregroundColor(Style.ink)
                     .lineLimit(1).truncationMode(.middle)
                 if let email = svc.email, email != svc.fullName {
-                    Text(email).font(.system(size: 10.5)).foregroundColor(Style.sub)
+                    Text(email).font(.system(size: 12.6)).foregroundColor(Style.sub)
                         .lineLimit(1).truncationMode(.middle)
                 }
             }
             Spacer(minLength: 6)
             if let plan = svc.plan {
                 Text(plan.uppercased())
-                    .font(.system(size: 10, weight: .bold)).foregroundColor(Style.ink)
+                    .font(.system(size: 12, weight: .bold)).foregroundColor(Style.ink)
                     .padding(.horizontal, 8).padding(.vertical, 3)
                     .background(Capsule().fill(Color.black.opacity(0.07)))
                     .overlay(Capsule().stroke(Style.border, lineWidth: 1))
@@ -311,15 +311,15 @@ private struct SettingsPanel: View {
                          trailing: String? = nil, showChevron: Bool = false) -> some View {
         HStack(spacing: 10) {
             icon(iconName, tint: tint)
-            Text(title).font(.system(size: 12.5)).foregroundColor(tint)
+            Text(title).font(.system(size: 15)).foregroundColor(tint)
             Spacer()
             if let trailing {
-                Text(trailing).font(.system(size: 10.5)).foregroundColor(Style.sub)
+                Text(trailing).font(.system(size: 12.6)).foregroundColor(Style.sub)
                     .lineLimit(1)
             }
             if showChevron {
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 10, weight: .semibold)).foregroundColor(Style.sub.opacity(0.7))
+                    .font(.system(size: 12, weight: .semibold)).foregroundColor(Style.sub.opacity(0.7))
             }
         }
         .rowPadding()
@@ -327,7 +327,7 @@ private struct SettingsPanel: View {
     }
 
     private func icon(_ name: String, tint: Color = Style.ink) -> some View {
-        Image(systemName: name).font(.system(size: 13)).foregroundColor(tint)
+        Image(systemName: name).font(.system(size: 15.6)).foregroundColor(tint)
             .frame(width: 18, alignment: .center)
     }
 
@@ -345,7 +345,7 @@ private struct SettingsPanel: View {
     private func section<Content: View>(_ title: String,
                                         @ViewBuilder _ content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(title).font(.system(size: 9.5, weight: .bold)).foregroundColor(Style.sub)
+            Text(title).font(.system(size: 11.4, weight: .bold)).foregroundColor(Style.sub)
                 .tracking(0.6).padding(.leading, 4)
             VStack(spacing: 0) { content() }.background(card)
         }
@@ -367,34 +367,34 @@ private struct SignInSection: View {
         VStack(alignment: .leading, spacing: 10) {
             if svc.awaitingCode {
                 Text("After authorizing in the browser, paste the code here")
-                    .font(.system(size: 11)).foregroundColor(Style.sub)
+                    .font(.system(size: 13.2)).foregroundColor(Style.sub)
                 TextField("code#state", text: $code)
-                    .textFieldStyle(.roundedBorder).font(.system(size: 12))
+                    .textFieldStyle(.roundedBorder).font(.system(size: 14.4))
                 HStack(spacing: 8) {
                     primary("Submit") { let c = code; code = ""; Task { await svc.submitCode(c) } }
                     secondary("Re-authorize") { code = ""; svc.startSignIn() }
                     secondary("Cancel") { code = ""; svc.cancelSignIn() }
                 }
             } else {
-                Text("Not signed in").font(.system(size: 12)).foregroundColor(Style.sub)
+                Text("Not signed in").font(.system(size: 14.4)).foregroundColor(Style.sub)
                 primary("Sign in with Claude") { svc.startSignIn() }
             }
             if let e = svc.errorText {
-                Text(e).font(.system(size: 10)).foregroundColor(.red).lineLimit(3)
+                Text(e).font(.system(size: 12)).foregroundColor(.red).lineLimit(3)
             }
         }
     }
 
     private func primary(_ t: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Text(t).font(.system(size: 12, weight: .semibold)).foregroundColor(.white)
+            Text(t).font(.system(size: 14.4, weight: .semibold)).foregroundColor(.white)
                 .padding(.horizontal, 14).padding(.vertical, 7)
                 .background(Capsule().fill(Style.ink))
         }.buttonStyle(.plain)
     }
     private func secondary(_ t: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Text(t).font(.system(size: 12)).foregroundColor(Style.ink)
+            Text(t).font(.system(size: 14.4)).foregroundColor(Style.ink)
                 .padding(.horizontal, 12).padding(.vertical, 7)
                 .background(Capsule().stroke(Style.border, lineWidth: 1))
         }.buttonStyle(.plain)
@@ -427,7 +427,7 @@ private struct UsageSection: View {
                 TokenUsageRow(today: today)
             }
             if let e = svc.errorText {
-                Text(e).font(.system(size: 10)).foregroundColor(.red)
+                Text(e).font(.system(size: 12)).foregroundColor(.red)
             }
         }
     }
@@ -441,14 +441,14 @@ private struct TokenUsageRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .firstTextBaseline) {
-                Text("Token Usage").font(.system(size: 13, weight: .semibold)).foregroundColor(Style.ink)
+                Text("Token Usage").font(.system(size: 15.6, weight: .semibold)).foregroundColor(Style.ink)
                 Spacer()
-                Text("Today").font(.system(size: 11)).foregroundColor(Style.sub)
+                Text("Today").font(.system(size: 13.2)).foregroundColor(Style.sub)
             }
             HStack(alignment: .firstTextBaseline, spacing: 5) {
                 Text(Self.fmt(today.tokens.total))
-                    .font(.system(size: 22, weight: .bold)).foregroundColor(Style.ink)
-                Text("tokens").font(.system(size: 11)).foregroundColor(Style.sub)
+                    .font(.system(size: 26.4, weight: .bold)).foregroundColor(Style.ink)
+                Text("tokens").font(.system(size: 13.2)).foregroundColor(Style.sub)
             }
             HStack(spacing: 14) {
                 stat("In", today.tokens.input)
@@ -461,8 +461,8 @@ private struct TokenUsageRow: View {
 
     private func stat(_ label: String, _ n: Int) -> some View {
         VStack(alignment: .leading, spacing: 1) {
-            Text(label).font(.system(size: 9, weight: .semibold)).foregroundColor(Style.sub)
-            Text(Self.fmt(n)).font(.system(size: 12, weight: .medium)).foregroundColor(Style.ink)
+            Text(label).font(.system(size: 10.8, weight: .semibold)).foregroundColor(Style.sub)
+            Text(Self.fmt(n)).font(.system(size: 14.4, weight: .medium)).foregroundColor(Style.ink)
         }
     }
 
@@ -483,13 +483,13 @@ private struct WindowRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .firstTextBaseline) {
-                Text(title).font(.system(size: 14, weight: .semibold)).foregroundColor(Style.ink)
+                Text(title).font(.system(size: 16.8, weight: .semibold)).foregroundColor(Style.ink)
                 Spacer()
                 Text(bucket?.utilization == nil ? "—" : String(format: "%.0f%%", bucket!.utilization!))
-                    .font(.system(size: 18, weight: .bold)).foregroundColor(Style.ink)
+                    .font(.system(size: 21.6, weight: .bold)).foregroundColor(Style.ink)
             }
             CapsuleBar(value: bucket?.fraction ?? 0, tint: tint)
-            Text(resetVerbose(bucket?.resetDate)).font(.system(size: 11)).foregroundColor(Style.sub)
+            Text(resetVerbose(bucket?.resetDate)).font(.system(size: 13.2)).foregroundColor(Style.sub)
         }
     }
 }
