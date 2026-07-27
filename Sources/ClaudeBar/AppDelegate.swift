@@ -14,7 +14,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let updater = Updater()
     private var statusItem: NSStatusItem!
     private var panel: KeyablePanel!
-    private var timer: Timer?
     private var clickMonitor: Any?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -26,15 +25,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         installEditMenu() // accessory app 無選單列,手動接上 Cmd+C/V/X/A 給輸入框
 
         svc.onChange = { [weak self] in self?.updateTitle() }
-        let host = NSHostingController(rootView:
-            PopoverView(svc: svc, updater: updater, onQuit: { NSApp.terminate(nil) }))
-        host.sizingOptions = [.preferredContentSize]
 
         // 無邊框面板：沒有 NSPopover 的箭頭。圓角 + 陰影由內容層處理。
+        // 內容（SwiftUI hosting view）不在啟動時常駐——改為開面板時才建、關閉即拆掉，
+        // 讓 app idle 時零 SwiftUI 渲染，不再被 TimelineView 每秒重繪空燒 CPU。
+        // （見 makeHostingController / showPanel / closePanel）
         let p = KeyablePanel(contentRect: .zero,
                              styleMask: [.borderless, .nonactivatingPanel],
                              backing: .buffered, defer: false)
-        p.contentViewController = host
         p.isOpaque = false
         p.backgroundColor = .clear
         p.hasShadow = true
@@ -49,12 +47,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         Task { await svc.refreshUsage(force: true); await svc.refreshEmail() }
         Task { await updater.check() }
 
-        timer = Timer.scheduledTimer(withTimeInterval: config.pollInterval, repeats: true) { [weak self] _ in
-            guard let self else { return }
-            self.svc.loadHistory()
-            Task { await self.svc.refreshUsage() }
-            Task { await self.updater.check() }
-        }
+        // POWER-SAVING: no background poll. Usage refreshes when you open the panel (see
+        // showPanel); the menu-bar % reflects your last open plus this one launch fetch.
 
         let nc = NotificationCenter.default
         nc.addObserver(self, selector: #selector(closePanel),
@@ -67,6 +61,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard panel?.isVisible == true else { return }
         panel.orderOut(nil)
         if let m = clickMonitor { NSEvent.removeMonitor(m); clickMonitor = nil }
+        // 拆掉 SwiftUI 內容，釋放其 render loop —— idle 時零渲染、不再空燒 CPU。
+        panel.contentViewController = nil
     }
 
     /// 用 nil-target 走 responder chain，讓焦點輸入框收到剪貼簿快捷鍵。
@@ -90,6 +86,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             authed: svc.isAuthed)
     }
 
+    /// 建立 popover 的 SwiftUI 內容。只在開啟面板時呼叫，關閉即釋放（見 closePanel），
+    /// 避免 hosting view 常駐背景跑 render loop（TimelineView 每秒重繪）而空燒 CPU。
+    private func makeHostingController() -> NSHostingController<PopoverView> {
+        let host = NSHostingController(rootView:
+            PopoverView(svc: svc, updater: updater, onQuit: { NSApp.terminate(nil) }))
+        host.sizingOptions = [.preferredContentSize]
+        return host
+    }
+
     @objc private func togglePanel() {
         if panel.isVisible { closePanel() } else { showPanel() }
     }
@@ -97,8 +102,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func showPanel() {
         guard let button = statusItem.button, let btnWin = button.window else { return }
 
-        // 打開面板即重算今日 token 用量（本機 JSONL，離線、不打 API）。
+        // 每次開啟才建立 SwiftUI 內容（關閉時已釋放，idle 期間不存在）。
+        panel.contentViewController = makeHostingController()
+
+        // 打開面板即重算今日 token 用量（本機 JSONL，離線、不打 API），並向 API 拉一次最新用量。
+        // 省電模式：只有這時（你在看）才打 API，背景不輪詢。
         svc.loadHistory()
+        Task { await svc.refreshUsage() }
 
         // 依內容自適應大小，置於 status item 正下方並貼齊右緣不超出螢幕。
         panel.layoutIfNeeded()
