@@ -7,7 +7,7 @@ cd "$(dirname "$0")/.."
 
 APP_NAME="ClaudeBar"
 BUNDLE_ID="com.claudebar.app"
-VERSION="0.2.6"
+VERSION="0.2.7"
 OUT="dist/${APP_NAME}.app"
 # 穩定簽章身分：讓每次重 build 的 designated requirement 一致，macOS Tahoe
 # 才會當成同一個 app、「允許在選單列」開關與各項權限重 build 不會掉。
