@@ -15,6 +15,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem!
     private var panel: KeyablePanel!
     private var clickMonitor: Any?
+    private var heartbeat: Timer?
+    private var watcher: UsageWatcher?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         LoginItem.cleanupLegacy() // 清掉舊版會 path-rot 的手寫 LaunchAgent plist
@@ -47,14 +49,42 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         Task { await svc.refreshUsage(force: true); await svc.refreshEmail() }
         Task { await updater.check() }
 
-        // POWER-SAVING: no background poll. Usage refreshes when you open the panel (see
-        // showPanel); the menu-bar % reflects your last open plus this one launch fetch.
+        startUsageRefreshTriggers()
 
         let nc = NotificationCenter.default
         nc.addObserver(self, selector: #selector(closePanel),
                        name: NSApplication.didResignActiveNotification, object: nil)
         nc.addObserver(self, selector: #selector(closePanel),
                        name: NSApplication.didChangeScreenParametersNotification, object: nil)
+    }
+
+    /// menu bar 的 5h 環必須隨時是真的（面板內容才是開啟時才算）。
+    /// 用事件驅動為主、低頻心跳保底，而不是無腦高頻輪詢：
+    ///   A. JSONL 有寫入 → 你正在跑 Claude Code，用量正在動（UsageWatcher）
+    ///   B. 5h 視窗重置的那一刻（UsageService 依 resets_at 自排）
+    ///   C. 系統喚醒 —— timer 睡眠中不會 fire，醒來時畫面上是睡前的數字
+    ///   D. 心跳保底：用量是「帳號級」的，你在另一台機器或 claude.ai 用掉額度時
+    ///      本機 JSONL 不會動，A 抓不到，只有這條防得住
+    /// refreshUsage 本身有 60s 節流，所以這些觸發源重疊也不會打爆 API。
+    private func startUsageRefreshTriggers() {
+        watcher = UsageWatcher { [weak self] in
+            Task { await self?.svc.refreshUsage() }
+        }
+        watcher?.start()
+
+        let t = Timer.scheduledTimer(withTimeInterval: config.pollInterval, repeats: true) { [weak self] _ in
+            Task { @MainActor in await self?.svc.refreshUsage() }
+        }
+        t.tolerance = 60 // 讓 macOS 合併喚醒 —— 省電的關鍵，比拉長間隔更有效
+        heartbeat = t
+
+        NSWorkspace.shared.notificationCenter.addObserver(
+            self, selector: #selector(systemDidWake),
+            name: NSWorkspace.didWakeNotification, object: nil)
+    }
+
+    @objc private func systemDidWake() {
+        Task { await svc.refreshUsage(force: true) }
     }
 
     @objc private func closePanel() {

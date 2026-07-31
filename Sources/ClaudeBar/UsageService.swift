@@ -26,7 +26,8 @@ final class UsageService: ObservableObject {
     private let openURL: (URL) -> Void
     private var pending: PendingAuth?
 
-    /// 下次背景刷新的預估時間（上次成功抓取 + 輪詢間隔）。
+    /// 保底心跳的下次刷新時間（上次成功抓取 + pollInterval）。這是「最晚何時更新」的上限——
+    /// JSONL 有寫入、5h 視窗重置、或系統喚醒時會更早刷（見 AppDelegate）。
     var nextUpdate: Date? { updatedAt.map { $0.addingTimeInterval(config.pollInterval) } }
 
     /// 任何狀態變動後通知外層（給 AppDelegate 更新 menu bar 標題）。
@@ -123,10 +124,26 @@ final class UsageService: ObservableObject {
             usage = try JSONDecoder().decode(UsageResponse.self, from: data)
             updatedAt = Date(); errorText = nil
             saveCache()
+            scheduleResetRefresh()
         } catch {
             errorText = (error as? LocalizedError)?.errorDescription ?? "Failed to load"
         }
         onChange?()
+    }
+
+    private var resetTimer: Timer?
+
+    /// 依 API 回報的 five_hour.resets_at 排一次性刷新：視窗一滾就把 menu bar 的環歸零。
+    /// 有這個就不必為了等這一刻而高頻輪詢——一天只多幾次請求。
+    private func scheduleResetRefresh() {
+        resetTimer?.invalidate(); resetTimer = nil
+        guard let at = usage?.five_hour?.resetDate else { return }
+        // +5s 寬限給伺服器端結算；已過期或超過一個視窗長度的值視為異常，交給保底心跳。
+        let delay = at.timeIntervalSinceNow + 5
+        guard delay > 0, delay <= 5 * 3600 else { return }
+        resetTimer = Timer.scheduledTimer(withTimeInterval: delay, repeats: false) { [weak self] _ in
+            Task { @MainActor in await self?.refreshUsage(force: true) }
+        }
     }
 
     /// 從本機 JSONL 計算每日成本（背景執行，不卡 UI）。
